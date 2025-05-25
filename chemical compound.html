@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Chemical Compound</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background elements */
+        .bg-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            animation: float 20s infinite linear;
+        }
+
+        .cloud1 { width: 100px; height: 40px; top: 20%; left: -100px; animation-duration: 25s; }
+        .cloud2 { width: 80px; height: 30px; top: 40%; left: -80px; animation-duration: 30s; }
+        .cloud3 { width: 120px; height: 50px; top: 60%; left: -120px; animation-duration: 20s; }
+
+        .formula {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 18px;
+            font-weight: bold;
+            animation: floatFormula 15s infinite linear;
+        }
+
+        @keyframes float {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        @keyframes floatFormula {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            color: #1e3c72;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #2a5298;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #1e3c72;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .option-btn {
+            background: linear-gradient(45deg, #2a5298, #1e3c72);
+            color: white;
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .option-btn:hover {
+            background: linear-gradient(45deg, #3a62a8, #2e4c82);
+        }
+
+        .answer-btn {
+            background: linear-gradient(45deg, #f0f8ff, #e6f3ff);
+            color: #1e3c72;
+            border: 2px solid #2a5298;
+            margin: 8px 0;
+            padding: 12px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .answer-btn:hover {
+            background: linear-gradient(45deg, #e6f3ff, #cce7ff);
+            transform: scale(1.02);
+        }
+
+        .answer-btn.pressed {
+            transform: scale(0.98);
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .answer-btn.correct {
+            background: linear-gradient(45deg, #90EE90, #98FB98);
+            border-color: #32CD32;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .answer-btn.incorrect {
+            background: linear-gradient(45deg, #FFB6C1, #FFC0CB);
+            border-color: #DC143C;
+            animation: incorrectShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .question-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            border-left: 5px solid #FFD700;
+        }
+
+        .question-number {
+            color: #2a5298;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 20px;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .score-display {
+            font-size: 24px;
+            color: #1e3c72;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .maker-credit {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .results-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .result-correct {
+            background: linear-gradient(45deg, #E8F5E8, #F0FFF0);
+            border-left: 4px solid #32CD32;
+        }
+
+        .result-incorrect {
+            background: linear-gradient(45deg, #FFE8E8, #FFF0F0);
+            border-left: 4px solid #DC143C;
+        }
+
+        .chemistry-icon {
+            font-size: 3em;
+            margin: 20px;
+            color: #FFD700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-elements">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        <div class="cloud cloud3"></div>
+        <div class="formula" style="left: 10%; animation-delay: 0s;">H₂O</div>
+        <div class="formula" style="left: 30%; animation-delay: 3s;">CO₂</div>
+        <div class="formula" style="left: 50%; animation-delay: 6s;">NaCl</div>
+        <div class="formula" style="left: 70%; animation-delay: 9s;">H₂SO₄</div>
+        <div class="formula" style="left: 90%; animation-delay: 12s;">CH₄</div>
+    </div>
+
+    <div class="container">
+        <!-- Home Page -->
+        <div id="homePage" class="page">
+            <div class="chemistry-icon">⚗️</div>
+            <h1>Guess the Chemical Compound</h1>
+            <button class="btn" onclick="showModePage()">Start</button>
+        </div>
+
+        <!-- Mode Selection Page -->
+        <div id="modePage" class="page hidden">
+            <h2>Select Game Mode and Difficulty</h2>
+            
+            <h3 style="color: #2a5298; margin-top: 30px;">Game Mode:</h3>
+            <button class="option-btn" onclick="selectMode(1)">Mode 1: Guess by Name</button>
+            <button class="option-btn" onclick="selectMode(2)">Mode 2: Guess from Formula</button>
+            
+            <h3 style="color: #2a5298; margin-top: 30px;">Difficulty Level:</h3>
+            <button class="option-btn" onclick="selectLevel('easy')">Easy</button>
+            <button class="option-btn" onclick="selectLevel('medium')">Medium</button>
+            <button class="option-btn" onclick="selectLevel('hard')">Hard</button>
+            
+            <div style="margin-top: 30px;">
+                <button class="btn" onclick="startGame()" id="startGameBtn" disabled>Start Game</button>
+                <button class="btn" onclick="showHomePage()">Back</button>
+            </div>
+        </div>
+
+        <!-- Game Page -->
+        <div id="gamePage" class="page hidden">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="question-container">
+                <div class="question-number" id="questionNumber">Question 1 of 20</div>
+                <div class="question-text" id="questionText"></div>
+                <div id="answersContainer"></div>
+            </div>
+            <button class="btn" onclick="nextQuestion()" id="nextBtn" style="display: none;">Next Question</button>
+        </div>
+
+        <!-- Results Page -->
+        <div id="resultsPage" class="page hidden">
+            <h2>Game Results</h2>
+            <div class="score-display" id="finalScore"></div>
+            <div class="results-container" id="resultsContainer"></div>
+            <button class="btn" onclick="showHomePage()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="maker-credit">Made By: Putri Inayah</div>
+
+    <script>
+        let gameState = {
+            mode: null,
+            level: null,
+            currentQuestion: 0,
+            score: 0,
+            questions: [],
+            userAnswers: [],
+            correctAnswers: []
+        };
+
+        const compounds = {
+            easy: [
+                {name: "Water", formula: "H₂O"},
+                {name: "Carbon Dioxide", formula: "CO₂"},
+                {name: "Sodium Chloride", formula: "NaCl"},
+                {name: "Methane", formula: "CH₄"},
+                {name: "Ammonia", formula: "NH₃"},
+                {name: "Oxygen", formula: "O₂"},
+                {name: "Hydrogen", formula: "H₂"},
+                {name: "Nitrogen", formula: "N₂"},
+                {name: "Carbon Monoxide", formula: "CO"},
+                {name: "Hydrochloric Acid", formula: "HCl"},
+                {name: "Sodium Hydroxide", formula: "NaOH"},
+                {name: "Calcium Carbonate", formula: "CaCO₃"},
+                {name: "Glucose", formula: "C₆H₁₂O₆"},
+                {name: "Ethanol", formula: "C₂H₅OH"},
+                {name: "Acetic Acid", formula: "CH₃COOH"},
+                {name: "Sulfur Dioxide", formula: "SO₂"},
+                {name: "Nitric Acid", formula: "HNO₃"},
+                {name: "Potassium Chloride", formula: "KCl"},
+                {name: "Magnesium Oxide", formula: "MgO"},
+                {name: "Iron Oxide", formula: "Fe₂O₃"}
+            ],
+            medium: [
+                {name: "Sulfuric Acid", formula: "H₂SO₄"},
+                {name: "Phosphoric Acid", formula: "H₃PO₄"},
+                {name: "Calcium Hydroxide", formula: "Ca(OH)₂"},
+                {name: "Aluminum Sulfate", formula: "Al₂(SO₄)₃"},
+                {name: "Copper Sulfate", formula: "CuSO₄"},
+                {name: "Silver Nitrate", formula: "AgNO₃"},
+                {name: "Barium Chloride", formula: "BaCl₂"},
+                {name: "Zinc Oxide", formula: "ZnO"},
+                {name: "Lead Nitrate", formula: "Pb(NO₃)₂"},
+                {name: "Potassium Permanganate", formula: "KMnO₄"},
+                {name: "Sodium Carbonate", formula: "Na₂CO₃"},
+                {name: "Calcium Chloride", formula: "CaCl₂"},
+                {name: "Ammonium Nitrate", formula: "NH₄NO₃"},
+                {name: "Hydrogen Peroxide", formula: "H₂O₂"},
+                {name: "Sodium Sulfate", formula: "Na₂SO₄"},
+                {name: "Potassium Hydroxide", formula: "KOH"},
+                {name: "Magnesium Sulfate", formula: "MgSO₄"},
+                {name: "Iron Chloride", formula: "FeCl₃"},
+                {name: "Copper Oxide", formula: "CuO"},
+                {name: "Nickel Sulfate", formula: "NiSO₄"}
+            ],
+            hard: [
+                {name: "Potassium Dichromate", formula: "K₂Cr₂O₇"},
+                {name: "Aluminum Hydroxide", formula: "Al(OH)₃"},
+                {name: "Mercury Chloride", formula: "HgCl₂"},
+                {name: "Chromium Trioxide", formula: "CrO₃"},
+                {name: "Manganese Dioxide", formula: "MnO₂"},
+                {name: "Cobalt Chloride", formula: "CoCl₂"},
+                {name: "Titanium Dioxide", formula: "TiO₂"},
+                {name: "Vanadium Pentoxide", formula: "V₂O₅"},
+                {name: "Tungsten Carbide", formula: "WC"},
+                {name: "Molybdenum Disulfide", formula: "MoS₂"},
+                {name: "Cerium Oxide", formula: "CeO₂"},
+                {name: "Lanthanum Chloride", formula: "LaCl₃"},
+                {name: "Yttrium Oxide", formula: "Y₂O₃"},
+                {name: "Zirconium Dioxide", formula: "ZrO₂"},
+                {name: "Niobium Pentoxide", formula: "Nb₂O₅"},
+                {name: "Tantalum Carbide", formula: "TaC"},
+                {name: "Rhenium Heptoxide", formula: "Re₂O₇"},
+                {name: "Osmium Tetroxide", formula: "OsO₄"},
+                {name: "Iridium Chloride", formula: "IrCl₃"},
+                {name: "Platinum Dioxide", formula: "PtO₂"}
+            ]
+        };
+
+        function showModePage() {
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('modePage').classList.remove('hidden');
+        }
+
+        function showHomePage() {
+            document.getElementById('modePage').classList.add('hidden');
+            document.getElementById('gamePage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.add('hidden');
+            document.getElementById('homePage').classList.remove('hidden');
+            resetGame();
+        }
+
+        function selectMode(mode) {
+            gameState.mode = mode;
+            document.querySelectorAll('.option-btn').forEach(btn => btn.style.background = 'linear-gradient(45deg, #2a5298, #1e3c72)');
+            event.target.style.background = 'linear-gradient(45deg, #FFD700, #FFA500)';
+            event.target.style.color = '#1e3c72';
+            checkStartButton();
+        }
+
+        function selectLevel(level) {
+            gameState.level = level;
+            document.querySelectorAll('.option-btn').forEach(btn => btn.style.background = 'linear-gradient(45deg, #2a5298, #1e3c72)');
+            event.target.style.background = 'linear-gradient(45deg, #FFD700, #FFA500)';
+            event.target.style.color = '#1e3c72';
+            checkStartButton();
+        }
+
+        function checkStartButton() {
+            const startBtn = document.getElementById('startGameBtn');
+            if (gameState.mode && gameState.level) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+            }
+        }
+
+        function generateQuestions() {
+            const levelCompounds = compounds[gameState.level];
+            const questions = [];
+            
+            for (let i = 0; i < 20; i++) {
+                const correct = levelCompounds[i % levelCompounds.length];
+                const wrongOptions = levelCompounds
+                    .filter(c => c !== correct)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 3);
+                
+                const allOptions = [correct, ...wrongOptions].sort(() => Math.random() - 0.5);
+                const correctIndex = allOptions.indexOf(correct);
+                
+                if (gameState.mode === 1) {
+                    questions.push({
+                        question: correct.name,
+                        options: allOptions.map(c => c.formula),
+                        correctIndex: correctIndex,
+                        correctAnswer: correct.formula
+                    });
+                } else {
+                    questions.push({
+                        question: correct.formula,
+                        options: allOptions.map(c => c.name),
+                        correctIndex: correctIndex,
+                        correctAnswer: correct.name
+                    });
+                }
+            }
+            
+            return questions;
+        }
+
+        function startGame() {
+            gameState.questions = generateQuestions();
+            gameState.currentQuestion = 0;
+            gameState.score = 0;
+            gameState.userAnswers = [];
+            gameState.correctAnswers = [];
+            
+            document.getElementById('modePage').classList.add('hidden');
+            document.getElementById('gamePage').classList.remove('hidden');
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const question = gameState.questions[gameState.currentQuestion];
+            const progress = ((gameState.currentQuestion + 1) / 20) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('questionNumber').textContent = `Question ${gameState.currentQuestion + 1} of 20`;
+            
+            if (gameState.mode === 1) {
+                document.getElementById('questionText').textContent = `What is the chemical formula for ${question.question}?`;
+            } else {
+                document.getElementById('questionText').textContent = `What compound has the formula ${question.question}?`;
+            }
+            
+            const container = document.getElementById('answersContainer');
+            container.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectAnswer(index);
+                container.appendChild(btn);
+            });
+            
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        function selectAnswer(selectedIndex) {
+            const question = gameState.questions[gameState.currentQuestion];
+            const buttons = document.querySelectorAll('.answer-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            buttons[selectedIndex].classList.add('pressed');
+            
+            setTimeout(() => {
+                if (selectedIndex === question.correctIndex) {
+                    buttons[selectedIndex].classList.add('correct');
+                    gameState.score += 5;
+                    gameState.userAnswers.push(true);
+                } else {
+                    buttons[selectedIndex].classList.add('incorrect');
+                    buttons[question.correctIndex].classList.add('correct');
+                    gameState.userAnswers.push(false);
+                }
+                
+                gameState.correctAnswers.push({
+                    question: question.question,
+                    userAnswer: question.options[selectedIndex],
+                    correctAnswer: question.correctAnswer,
+                    isCorrect: selectedIndex === question.correctIndex
+                });
+                
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            }, 300);
+        }
+
+        function nextQuestion() {
+            gameState.currentQuestion++;
+            
+            if (gameState.currentQuestion < 20) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('gamePage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('hidden');
+            
+            document.getElementById('finalScore').textContent = `Your Score: ${gameState.score}/100 points`;
+            
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            
+            gameState.correctAnswers.forEach((answer, index) => {
+                const div = document.createElement('div');
+                div.className = `result-item ${answer.isCorrect ? 'result-correct' : 'result-incorrect'}`;
+                
+                const modeText = gameState.mode === 1 ? 'Name' : 'Formula';
+                div.innerHTML = `
+                    <strong>Q${index + 1}:</strong> ${answer.question}<br>
+                    <strong>Your Answer:</strong> ${answer.userAnswer}<br>
+                    <strong>Correct Answer:</strong> ${answer.correctAnswer}
+                    ${answer.isCorrect ? ' ✓' : ' ✗'}
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function resetGame() {
+            gameState = {
+                mode: null,
+                level: null,
+                currentQuestion: 0,
+                score: 0,
+                questions: [],
+                userAnswers: [],
+                correctAnswers: []
+            };
+            
+            document.getElementById('startGameBtn').disabled = true;
+            document.getElementById('startGameBtn').style.opacity = '0.6';
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.style.background = 'linear-gradient(45deg, #2a5298, #1e3c72)';
+                btn.style.color = 'white';
+            });
+        }
+
+        // Initialize floating formulas animation
+        setInterval(() => {
+            const formulas = ['H₂O', 'CO₂', 'NaCl', 'H₂SO₄', 'CH₄', 'NH₃', 'O₂', 'CaCO₃'];
+            const formula = document.createElement('div');
+            formula.className = 'formula';
+            formula.textContent = formulas[Math.floor(Math.random() * formulas.length)];
+            formula.style.left = Math.random() * 90 + '%';
+            formula.style.animationDelay = '0s';
+            formula.style.animationDuration = (15 + Math.random() * 10) + 's';
+            
+            document.querySelector('.bg-elements').appendChild(formula);
+            
+            setTimeout(() => {
+                formula.remove();
+            }, 25000);
+        }, 3000);
+    </script>
+</body>
+</html>
